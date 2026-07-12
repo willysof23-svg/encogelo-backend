@@ -77,10 +77,18 @@ input[type=url]:focus{ border-color:var(--stamp); box-shadow:0 0 0 2px rgba(179,
 
   <div class="label-card" id="result-card">
     <div class="orig-url" id="result-orig"></div>
+
+    <span class="field-label">Enlace corto (para Beacons y redes)</span>
     <div class="short-link-box">
-      <input class="short-link" id="short-link" readonly />
-      <button class="icon-btn" id="copy-btn">COPIAR</button>
+      <input class="short-link" id="public-short-link" readonly />
+      <button class="icon-btn" id="copy-public-btn">COPIAR</button>
       <button class="icon-btn" id="open-btn">ABRIR</button>
+    </div>
+
+    <span class="field-label" style="margin-top:14px; display:block;">Enlace propio (con estadísticas)</span>
+    <div class="short-link-box">
+      <input class="short-link" id="short-link" readonly style="font-size:13px;" />
+      <button class="icon-btn" id="copy-btn">COPIAR</button>
     </div>
   </div>
 
@@ -99,7 +107,9 @@ const shrinkBtn = document.getElementById('shrink-btn');
 const resultCard = document.getElementById('result-card');
 const resultOrig = document.getElementById('result-orig');
 const shortLinkInput = document.getElementById('short-link');
+const publicShortLinkInput = document.getElementById('public-short-link');
 const copyBtn = document.getElementById('copy-btn');
+const copyPublicBtn = document.getElementById('copy-public-btn');
 const openBtn = document.getElementById('open-btn');
 const histList = document.getElementById('hist-list');
 const toast = document.getElementById('toast');
@@ -122,9 +132,10 @@ async function loadHistory(){
     links.forEach(item=>{
       const row = document.createElement('div');
       row.className = 'hist-item';
+      const displayUrl = item.publicShortUrl || item.shortUrl;
       row.innerHTML = `
         <div class="hist-left">
-          <div class="hist-code">${item.shortUrl.replace(/^https?:\/\//,'')}</div>
+          <div class="hist-code">${displayUrl.replace(/^https?:\/\//,'')}</div>
           <div class="hist-orig">${item.url}</div>
         </div>
         <div class="hist-clicks">${item.clicks} clics</div>
@@ -134,7 +145,7 @@ async function loadHistory(){
         </div>
       `;
       row.querySelector('[data-act=copy]').onclick = ()=>{
-        navigator.clipboard.writeText(item.shortUrl);
+        navigator.clipboard.writeText(displayUrl);
         showToast('Enlace copiado');
       };
       row.querySelector('[data-act=del]').onclick = async ()=>{
@@ -171,6 +182,7 @@ async function shrinkUrl(){
 
     resultOrig.textContent = data.url;
     shortLinkInput.value = data.shortUrl;
+    publicShortLinkInput.value = data.publicShortUrl || data.shortUrl;
     resultCard.classList.add('show');
     urlInput.value = '';
     loadHistory();
@@ -186,6 +198,10 @@ shrinkBtn.addEventListener('click', shrinkUrl);
 urlInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') shrinkUrl(); });
 copyBtn.addEventListener('click', ()=>{
   navigator.clipboard.writeText(shortLinkInput.value);
+  showToast('Enlace copiado');
+});
+copyPublicBtn.addEventListener('click', ()=>{
+  navigator.clipboard.writeText(publicShortLinkInput.value);
   showToast('Enlace copiado');
 });
 openBtn.addEventListener('click', ()=>{ window.open(resultOrig.textContent, '_blank'); });
