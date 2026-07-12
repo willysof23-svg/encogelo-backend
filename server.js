@@ -34,18 +34,30 @@ function getBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
 
+async function tryShortener(endpoint) {
+  const res = await fetch(endpoint, { signal: AbortSignal.timeout(8000) });
+  const text = (await res.text()).trim();
+  if (text.startsWith('http')) return text;
+  throw new Error('Respuesta inválida: ' + text);
+}
+
+// Genera un enlace corto adicional con dominio muy corto (is.gd o v.gd),
+// para plataformas como Beacons que limitan el largo del campo de url.
+// Si el primero falla (por ejemplo caído temporalmente), intenta el segundo.
 async function createPublicShortUrl(longUrl) {
-  try {
-    const endpoint = 'https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl);
-    const res = await fetch(endpoint, { signal: AbortSignal.timeout(8000) });
-    const text = (await res.text()).trim();
-    if (text.startsWith('http')) return text;
-    console.warn('TinyURL no devolvió una url válida:', text);
-    return null;
-  } catch (err) {
-    console.warn('No se pudo generar el enlace público corto:', err.message);
-    return null;
+  const encoded = encodeURIComponent(longUrl);
+  const providers = [
+    'https://is.gd/create.php?format=simple&url=' + encoded,
+    'https://v.gd/create.php?format=simple&url=' + encoded
+  ];
+  for (const endpoint of providers) {
+    try {
+      return await tryShortener(endpoint);
+    } catch (err) {
+      console.warn('Acortador falló (' + endpoint.split('/')[2] + '):', err.message);
+    }
   }
+  return null;
 }
 
 app.post('/api/shorten', async (req, res) => {
