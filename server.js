@@ -74,7 +74,7 @@ app.post('/api/shorten', async (req, res) => {
 
     const baseUrl = getBaseUrl(req);
     const shortUrl = `${baseUrl}/${code}`;
-    const publicShortUrl = await createPublicShortUrl(shortUrl);
+    const publicShortUrl = await createPublicShortUrl(url);
 
     await linksCollection.insertOne({
       code,
