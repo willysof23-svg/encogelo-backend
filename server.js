@@ -36,11 +36,11 @@ function getBaseUrl(req) {
 
 async function createPublicShortUrl(longUrl) {
   try {
-    const endpoint = 'https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl);
+    const endpoint = 'https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl);
     const res = await fetch(endpoint, { signal: AbortSignal.timeout(8000) });
     const text = (await res.text()).trim();
     if (text.startsWith('http')) return text;
-    console.warn('is.gd no devolvió una url válida:', text);
+    console.warn('TinyURL no devolvió una url válida:', text);
     return null;
   } catch (err) {
     console.warn('No se pudo generar el enlace público corto:', err.message);
