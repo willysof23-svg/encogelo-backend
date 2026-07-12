@@ -34,10 +34,6 @@ function getBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
 
-// Genera un enlace corto adicional con dominio limpio (is.gd), usando un
-// servicio público gratuito. Útil para plataformas como Beacons que rechazan
-// dominios con guiones o subdominios largos. Si falla, no rompe el flujo:
-// simplemente no se guarda un publicShortUrl y se usa el propio.
 async function createPublicShortUrl(longUrl) {
   try {
     const endpoint = 'https://is.gd/create.php?format=simple&url=' + encodeURIComponent(longUrl);
@@ -52,7 +48,6 @@ async function createPublicShortUrl(longUrl) {
   }
 }
 
-// Crear un enlace corto
 app.post('/api/shorten', async (req, res) => {
   try {
     const { url } = req.body || {};
@@ -96,7 +91,6 @@ app.post('/api/shorten', async (req, res) => {
   }
 });
 
-// Listar los últimos enlaces creados
 app.get('/api/links', async (req, res) => {
   try {
     const links = await linksCollection
@@ -121,7 +115,6 @@ app.get('/api/links', async (req, res) => {
   }
 });
 
-// Borrar un enlace
 app.delete('/api/links/:code', async (req, res) => {
   try {
     await linksCollection.deleteOne({ code: req.params.code });
@@ -132,10 +125,9 @@ app.delete('/api/links/:code', async (req, res) => {
   }
 });
 
-// Redirección del enlace corto (debe ir al final, es la ruta comodín)
 app.get('/:code', async (req, res, next) => {
   const { code } = req.params;
-  if (code.includes('.')) return next(); // deja pasar archivos estáticos
+  if (code.includes('.')) return next();
 
   try {
     const link = await linksCollection.findOne({ code });
