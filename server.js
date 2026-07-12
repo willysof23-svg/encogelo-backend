@@ -34,25 +34,38 @@ function getBaseUrl(req) {
   return `${req.protocol}://${req.get('host')}`;
 }
 
-async function tryShortener(endpoint) {
+async function tryShrtcoDe(longUrl) {
+  const endpoint = 'https://api.shrtco.de/v2/shorten?url=' + encodeURIComponent(longUrl);
+  const res = await fetch(endpoint, { signal: AbortSignal.timeout(8000) });
+  const data = await res.json();
+  if (data.ok && data.result) {
+    return data.result.full_short_link2 || data.result.full_short_link;
+  }
+  throw new Error('Respuesta inválida de shrtco.de');
+}
+
+async function tryLegacyShortener(endpoint) {
   const res = await fetch(endpoint, { signal: AbortSignal.timeout(8000) });
   const text = (await res.text()).trim();
   if (text.startsWith('http')) return text;
   throw new Error('Respuesta inválida: ' + text);
 }
 
-// Genera un enlace corto adicional con dominio muy corto (is.gd o v.gd),
-// para plataformas como Beacons que limitan el largo del campo de url.
-// Si el primero falla (por ejemplo caído temporalmente), intenta el segundo.
 async function createPublicShortUrl(longUrl) {
+  try {
+    return await tryShrtcoDe(longUrl);
+  } catch (err) {
+    console.warn('Acortador falló (shrtco.de):', err.message);
+  }
+
   const encoded = encodeURIComponent(longUrl);
-  const providers = [
+  const legacyProviders = [
     'https://is.gd/create.php?format=simple&url=' + encoded,
     'https://v.gd/create.php?format=simple&url=' + encoded
   ];
-  for (const endpoint of providers) {
+  for (const endpoint of legacyProviders) {
     try {
-      return await tryShortener(endpoint);
+      return await tryLegacyShortener(endpoint);
     } catch (err) {
       console.warn('Acortador falló (' + endpoint.split('/')[2] + '):', err.message);
     }
